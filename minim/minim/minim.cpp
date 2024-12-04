@@ -661,7 +661,7 @@ int main(int argc, char* argv[])
 
         std::vector<MealyState> reachableStates = findReachableStates(mealyStates);
 
-        std::vector<MealyState> minimize = mealyMin(reachableStates);
+        std::vector<MealyState> minimize = mealyMin(mealyStates);
 
         WriteMealyToFile(minimize, outFile);
         //WriteMooreToFile(mooreAutomaton, outFile);
