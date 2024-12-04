@@ -1,0 +1,5 @@
+D:/ПГТУ/TAaFL/minim/out/build/x64-debug/CMakeFiles/edit_cache.dir
+D:/ПГТУ/TAaFL/minim/out/build/x64-debug/CMakeFiles/rebuild_cache.dir
+D:/ПГТУ/TAaFL/minim/out/build/x64-debug/minim/CMakeFiles/minim.dir
+D:/ПГТУ/TAaFL/minim/out/build/x64-debug/minim/CMakeFiles/edit_cache.dir
+D:/ПГТУ/TAaFL/minim/out/build/x64-debug/minim/CMakeFiles/rebuild_cache.dir
