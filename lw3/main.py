@@ -162,8 +162,7 @@ def generate_left_moore_automaton(transitions):
         "output": f""
     }
     state_counter += 1
-    #print(list(transitions.values())[0][0][1])
-    # Генерация уникальных состояний для каждого нетерминала
+
     for non_terminal in transitions.keys():
         if non_terminal != "startSym":
             if non_terminal not in state_mapping:
@@ -193,25 +192,12 @@ def generate_left_moore_automaton(transitions):
         "state": f"q{state_counter}",
         "output": f"F"
     }
-    # for states in state_mapping:
-    #     print(states)
-    #print(list(transitions.values())[0][0][1])
 
 
     all_input_symbols = set()
     for state, trans in transitions.items():
         for terminal, _ in trans:
             all_input_symbols.add(terminal)
-    # for rules in transitions.values():
-    #     for _, next_non_terminal in rules:
-    #         if next_non_terminal and next_non_terminal not in state_mapping:
-    #             state_mapping[next_non_terminal] = {
-    #                 "state": f"q{state_counter}",
-    #                 "output": f"y{state_counter}"
-    #             }
-    #             state_counter += 1
-
-    # Генерация переходов автомата Мура
     moore_automaton = []
 
 
@@ -299,10 +285,6 @@ def export_moore_automaton_to_csv(moore_automaton, filename):
 
                 output_str = ','.join(next_states[0])
                 row.append(output_str)
-                # if next_states:
-                #     row.append(','.join(next_states))
-                # else:
-                #     row.append('')  # Пустое значение, если переходов нет
             writer.writerow(row)
 
     print(f"Moore automaton exported to {filename}")
