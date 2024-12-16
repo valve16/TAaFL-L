@@ -241,6 +241,11 @@ def export_moore_automaton_to_csv(moore_automaton, filename):
     with open(filename, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file, delimiter=';')
 
+        output_row = ['']
+        for state in moore_automaton:
+            output_row.append(state['output'])
+        writer.writerow(output_row)
+
         headers = [''] + [state['state'] for state in moore_automaton]
         writer.writerow(headers)
 
