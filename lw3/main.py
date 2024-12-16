@@ -53,7 +53,7 @@ def process_left_rule(match, transitions):
         parts = rule.split()
         if len(parts) == 1:
             terminal = parts[0]
-            transitions["H"].append((terminal, next_non_terminal))
+            transitions["startSym"].append((terminal, next_non_terminal))
             #print("H", terminal, next_non_terminal)
         else:
             prev_non_terminal = parts[0].replace('<', '').replace('>', '')
@@ -157,7 +157,7 @@ def generate_left_moore_automaton(transitions):
     state_mapping = {}
     state_counter = 0
 
-    state_mapping["H"] = {
+    state_mapping["startSym"] = {
         "state": f"q{state_counter}",
         "output": f""
     }
@@ -165,7 +165,7 @@ def generate_left_moore_automaton(transitions):
     #print(list(transitions.values())[0][0][1])
     # Генерация уникальных состояний для каждого нетерминала
     for non_terminal in transitions.keys():
-        if non_terminal != "H":
+        if non_terminal != "startSym":
             state_mapping[non_terminal] = {
                 "state": f"q{state_counter}",
                 "output": f""
@@ -237,27 +237,6 @@ def generate_left_moore_automaton(transitions):
 
     return moore_automaton
 
-
-def remove_unreachable_states(moore_automaton):
-    reachable_states = set()
-    initial_state = "q0"
-
-    stack = [initial_state]
-
-    while stack:
-        current_state = stack.pop()
-        reachable_states.add(current_state)
-
-        for state in moore_automaton:
-            if state['state'] == current_state:
-                for transition in state['transitions']:
-                    next_state = transition['nextPos']
-                    if next_state and next_state not in reachable_states:
-                        stack.append(next_state)
-
-    moore_automaton = [state for state in moore_automaton if state['state'] in reachable_states]
-
-    return moore_automaton
 
 def export_moore_automaton_to_csv(moore_automaton, filename):
     # Получаем все уникальные inputSym
