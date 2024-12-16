@@ -21,7 +21,8 @@ def parse_grammar(grammar_text):
         line = line.strip()
         right_match = right_regex.match(line)
         left_match = left_regex.match(line)
-        if left_match != right_match:
+
+        if bool(left_match) != bool(right_match):
             if left_match:
                 leftGr = True
             elif right_match:
