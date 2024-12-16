@@ -255,7 +255,8 @@ def export_moore_automaton_to_csv(moore_automaton, filename):
     all_input_symbols = set()
     for state in moore_automaton:
         for transition in state['transitions']:
-            all_input_symbols.add(transition['inputSym'])
+            if transition['nextPos']:  # используемые символы ввода
+                all_input_symbols.add(transition['inputSym'])
 
     all_input_symbols = sorted(all_input_symbols)
 
