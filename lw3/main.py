@@ -156,7 +156,7 @@ def generate_right_moore_automaton(transitions):
 def generate_left_moore_automaton(transitions):
     state_mapping = {}
     state_counter = 0
-
+    finalstate = False
     state_mapping["startSym"] = {
         "state": f"q{state_counter}",
         "output": f""
@@ -166,19 +166,32 @@ def generate_left_moore_automaton(transitions):
     # Генерация уникальных состояний для каждого нетерминала
     for non_terminal in transitions.keys():
         if non_terminal != "startSym":
-            state_mapping[non_terminal] = {
-                "state": f"q{state_counter}",
-                "output": f""
-            }
-            state_counter += 1
-        print(non_terminal, state_mapping[non_terminal]["state"])
+            if non_terminal not in state_mapping:
+                state_mapping[non_terminal] = {
+                    "state": f"q{state_counter}",
+                    "output": f""
+                }
+                state_counter += 1
+
+    for transition in transitions.values():
+        for state in transition:
+            second_element = state[1]
+            if second_element not in state_mapping:
+                state_mapping[second_element] = {
+                    "state": f"q{state_counter}",
+                    "output": f""
+                }
+                state_counter += 1
+
 
 
     state_mapping[list(transitions.values())[0][0][1]] = {
         "state": f"q{state_counter}",
         "output": f"F"
     }
-
+    # for states in state_mapping:
+    #     print(states)
+    #print(list(transitions.values())[0][0][1])
     all_input_symbols = set()
     for state, trans in transitions.items():
         for terminal, _ in trans:
@@ -195,13 +208,11 @@ def generate_left_moore_automaton(transitions):
     # Генерация переходов автомата Мура
     moore_automaton = []
 
-
-
-
     for state, trans in transitions.items():
         current_state = state_mapping[state]["state"]
         current_output = state_mapping[state]["output"]
-
+        if current_output == "F":
+            finalstate = True
         transitions_list = []
 
         for symbol in all_input_symbols:
@@ -224,18 +235,20 @@ def generate_left_moore_automaton(transitions):
             "output": current_output,
             "transitions": transitions_list
         })
-        print(current_state, current_output, transitions_list)
-
-    # moore_automaton.append({
-    #     "state": state_mapping[list(transitions.values())[0][0][1]]["state"],
-    #     "output": "F",
-    #     "transitions": [{"inputSym": _, "nextPos": []} for _ in all_input_symbols]
-    # })
+        # print(current_state, current_output, transitions_list)
+    if not finalstate:
+        moore_automaton.append({
+            "state": state_mapping[list(transitions.values())[0][0][1]]["state"],
+            "output": "F",
+            "transitions": [{"inputSym": _, "nextPos": []} for _ in all_input_symbols]
+        })
 
     # for state in moore_automaton:
     #     print(state)
 
     return moore_automaton
+
+
 
 
 def export_moore_automaton_to_csv(moore_automaton, filename):
