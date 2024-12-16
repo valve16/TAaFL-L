@@ -255,6 +255,8 @@ def generate_left_moore_automaton(transitions):
     # for state in moore_automaton:
     #     print(state)
 
+    moore_automaton = sorted(moore_automaton, key=lambda x: x["state"])
+
     return moore_automaton
 
 
