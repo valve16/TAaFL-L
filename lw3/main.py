@@ -171,9 +171,12 @@ def generate_left_moore_automaton(transitions):
                     "state": f"q{state_counter}",
                     "output": f""
                 }
+                #print(non_terminal, state_counter)
                 state_counter += 1
 
-    for transition in transitions.values():
+    transitions_list = list(transitions.items())
+
+    for non_terminal, transition in transitions_list:
         for state in transition:
             second_element = state[1]
             if second_element not in state_mapping:
@@ -181,9 +184,10 @@ def generate_left_moore_automaton(transitions):
                     "state": f"q{state_counter}",
                     "output": f""
                 }
+                if second_element not in transitions:
+                    transitions[second_element] = []
+                transitions[second_element] = []
                 state_counter += 1
-
-
 
     state_mapping[list(transitions.values())[0][0][1]] = {
         "state": f"q{state_counter}",
@@ -192,6 +196,8 @@ def generate_left_moore_automaton(transitions):
     # for states in state_mapping:
     #     print(states)
     #print(list(transitions.values())[0][0][1])
+
+
     all_input_symbols = set()
     for state, trans in transitions.items():
         for terminal, _ in trans:
@@ -208,6 +214,8 @@ def generate_left_moore_automaton(transitions):
     # Генерация переходов автомата Мура
     moore_automaton = []
 
+
+
     for state, trans in transitions.items():
         current_state = state_mapping[state]["state"]
         current_output = state_mapping[state]["output"]
@@ -219,6 +227,7 @@ def generate_left_moore_automaton(transitions):
             next_states = []
             # Находим переход для данного символа
             for terminal, next_state_row in trans:
+
                 if terminal == symbol:
                     next_states.append(state_mapping[next_state_row]["state"])
 
@@ -247,6 +256,7 @@ def generate_left_moore_automaton(transitions):
     #     print(state)
 
     return moore_automaton
+
 
 
 
