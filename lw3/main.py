@@ -73,7 +73,6 @@ def process_right_rule(match, transitions):
 
 
 def generate_right_moore_automaton(transitions):
-    """Генерация автомата Мура."""
     state_mapping = {}
     state_counter = 0
 
@@ -90,7 +89,8 @@ def generate_right_moore_automaton(transitions):
         "state": f"q{state_counter}",
         "output": f"F"
     }
-
+    # for state, trans in transitions.items():
+    #     print(state, trans)
     all_input_symbols = set()
     for state, trans in transitions.items():
         for terminal, _ in trans:
@@ -114,16 +114,17 @@ def generate_right_moore_automaton(transitions):
         transitions_list = []
 
         for symbol in all_input_symbols:
-            next_state = None
+            next_states = []
             # Находим переход для данного символа
             for terminal, next_state_row in trans:
                 if terminal == symbol:
-                    next_state = state_mapping[next_state_row]["state"]
-                    break
+                    next_states.append(state_mapping[next_state_row]["state"])
 
             # Если перехода нет, оставляем next_state пустым
-            if not next_state:
-                next_state = ""
+            # if not next_state:
+            #     next_state = ""
+            next_state = next_states if next_states else []
+
 
             transitions_list.append({"inputSym": symbol, "nextPos": next_state})
 
@@ -137,7 +138,7 @@ def generate_right_moore_automaton(transitions):
     moore_automaton.append({
         "state": state_mapping["F"]["state"],
         "output": state_mapping["F"]["output"],
-        "transitions": [{"inputSym": _, "nextPos": ""} for _ in all_input_symbols]
+        "transitions": [{"inputSym": _, "nextPos": []} for _ in all_input_symbols]
     })
 
 
@@ -198,12 +199,13 @@ def generate_left_moore_automaton(transitions):
         transitions_list = []
 
         for symbol in all_input_symbols:
-            next_state = None
+            next_states = []
             # Находим переход для данного символа
             for terminal, next_state_row in trans:
                 if terminal == symbol:
-                    next_state = state_mapping[next_state_row]["state"]
-                    break
+                    next_states.append(state_mapping[next_state_row]["state"])
+
+            next_state = next_states if next_states else []
 
             # Если перехода нет, оставляем next_state пустым
             if not next_state:
@@ -221,13 +223,14 @@ def generate_left_moore_automaton(transitions):
     moore_automaton.append({
         "state": state_mapping[list(transitions.values())[0][0][1]]["state"],
         "output": "F",
-        "transitions": [{"inputSym": _, "nextPos": ""} for _ in all_input_symbols]
+        "transitions": [{"inputSym": _, "nextPos": []} for _ in all_input_symbols]
     })
 
     # for state in moore_automaton:
     #     print(state)
 
     return moore_automaton
+
 
 def remove_unreachable_states(moore_automaton):
     reachable_states = set()
@@ -255,8 +258,8 @@ def export_moore_automaton_to_csv(moore_automaton, filename):
     all_input_symbols = set()
     for state in moore_automaton:
         for transition in state['transitions']:
-            if transition['nextPos']:  # используемые символы ввода
-                all_input_symbols.add(transition['inputSym'])
+            #if transition['nextPos']:  # используемые символы ввода
+            all_input_symbols.add(transition['inputSym'])
 
     all_input_symbols = sorted(all_input_symbols)
 
@@ -271,20 +274,29 @@ def export_moore_automaton_to_csv(moore_automaton, filename):
         headers = [''] + [state['state'] for state in moore_automaton]
         writer.writerow(headers)
 
-        # Для каждого inputSym создаем строку в CSV
+        #создаем строку в CSV
         for symbol in all_input_symbols:
             row = [symbol]
+
             for state in moore_automaton:
                 # Ищем переход для данного символа
-                next_pos = ""
+                next_states = []
                 for transition in state['transitions']:
                     if transition['inputSym'] == symbol:
-                        next_pos = transition['nextPos']
-                        break
-                row.append(next_pos)
+                        next_states.append(transition['nextPos'])
+                    #  несколько переходов
+                #row.append(next_states)
+
+                output_str = ','.join(next_states[0])
+                row.append(output_str)
+                # if next_states:
+                #     row.append(','.join(next_states))
+                # else:
+                #     row.append('')  # Пустое значение, если переходов нет
             writer.writerow(row)
 
     print(f"Moore automaton exported to {filename}")
+
 
 
 
