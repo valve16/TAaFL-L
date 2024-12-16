@@ -26,6 +26,8 @@ def parse_grammar(grammar_text):
                 leftGr = True
             elif right_match:
                 leftGr = False
+            break
+        
     for i, line in enumerate(lines):
         line = line.strip()
         right_match = right_regex.match(line)
