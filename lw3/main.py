@@ -319,7 +319,7 @@ def main():
     else:
         moore_automaton = generate_right_moore_automaton(transitions)
 
-    moore_automaton = remove_unreachable_states(moore_automaton)
+    #moore_automaton = remove_unreachable_states(moore_automaton)
     export_moore_automaton_to_csv(moore_automaton, output_file)
 if __name__ == "__main__":
     main()
