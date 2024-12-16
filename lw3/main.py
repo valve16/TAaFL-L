@@ -229,6 +229,27 @@ def generate_left_moore_automaton(transitions):
 
     return moore_automaton
 
+def remove_unreachable_states(moore_automaton):
+    reachable_states = set()
+    initial_state = "q0"
+
+    stack = [initial_state]
+
+    while stack:
+        current_state = stack.pop()
+        reachable_states.add(current_state)
+
+        for state in moore_automaton:
+            if state['state'] == current_state:
+                for transition in state['transitions']:
+                    next_state = transition['nextPos']
+                    if next_state and next_state not in reachable_states:
+                        stack.append(next_state)
+
+    moore_automaton = [state for state in moore_automaton if state['state'] in reachable_states]
+
+    return moore_automaton
+
 def export_moore_automaton_to_csv(moore_automaton, filename):
     # Получаем все уникальные inputSym
     all_input_symbols = set()
@@ -274,7 +295,6 @@ def main():
     grammar_file = sys.argv[1]
     output_file = sys.argv[2]
 
-    # Чтение грамматики из файла
     with open(grammar_file, 'r', encoding='utf-8') as file:
         input_grammar = file.read()
 
@@ -285,6 +305,8 @@ def main():
         moore_automaton = generate_left_moore_automaton(transitions)
     else:
         moore_automaton = generate_right_moore_automaton(transitions)
+
+    moore_automaton = remove_unreachable_states(moore_automaton)
     export_moore_automaton_to_csv(moore_automaton, output_file)
 if __name__ == "__main__":
     main()
