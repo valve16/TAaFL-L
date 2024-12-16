@@ -226,11 +226,11 @@ def generate_left_moore_automaton(transitions):
         })
         print(current_state, current_output, transitions_list)
 
-    moore_automaton.append({
-        "state": state_mapping[list(transitions.values())[0][0][1]]["state"],
-        "output": "F",
-        "transitions": [{"inputSym": _, "nextPos": []} for _ in all_input_symbols]
-    })
+    # moore_automaton.append({
+    #     "state": state_mapping[list(transitions.values())[0][0][1]]["state"],
+    #     "output": "F",
+    #     "transitions": [{"inputSym": _, "nextPos": []} for _ in all_input_symbols]
+    # })
 
     # for state in moore_automaton:
     #     print(state)
