@@ -1,6 +1,7 @@
 import re
 from collections import defaultdict
 import csv
+import sys
 
 def read_moore_to_list(positions, file, alphabet):
     alphabet_set = set()  # Множество для хранения символов алфавита
