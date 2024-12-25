@@ -85,28 +85,28 @@ def export_moore_automaton_to_csv(moore_automaton, filename):
 
     print(f"Moore automaton exported to {filename}")
 
-def epsilon_closure(states, moore_automaton):
-    """
-    Нахождение ε-замыкания для множества состояний.
-    """
-    closure = set(states)
-    changes = True
-    while changes:
-        changes = False
-        for state in closure.copy():
-            for transition in moore_automaton[state]['transitions']:
-                if transition['inputSym'] == "Оµ":  # ε-переход
-                    next_states = transition['nextPos']
-                    for next_state in next_states:
-                        if next_state not in closure:
-                            closure.add(next_state)
-                            changes = True
+def epsilon_closure(state, moore_automaton):
+    closure = {state}
+    stack = [state]
+
+    while stack:
+        current_state = stack.pop()
+        for transition in moore_automaton[current_state]['transitions']:
+            if transition['inputSym'] == "ε":  # Check for ε-transitions
+                for next_state in transition['nextPos']:
+                    if next_state not in closure:
+                        closure.add(next_state)
+                        stack.append(next_state)  # Add newly found state
     return closure
 
+def epsilon_closure_of_set(states, moore_automaton):
+
+    reachable_states = set()
+    for state in states:
+        reachable_states.update(epsilon_closure(state, moore_automaton))
+    return reachable_states
+
 def move(states, symbol, moore_automaton):
-    """
-    Получение множества состояний, в которые можно попасть из текущих состояний по символу.
-    """
     next_states = set()
     for state in states:
         for transition in moore_automaton[state]['transitions']:
@@ -115,45 +115,49 @@ def move(states, symbol, moore_automaton):
     return next_states
 
 def convert_nfa_to_dfa(moore_automaton, alphabet):
-    """
-    Преобразование НКА в ДКА.
-    """
-    dfa_automaton = []
-    state_map = {}
-    queue = []
-    initial_state = epsilon_closure([list(moore_automaton.keys())[0]], moore_automaton)
-    state_map[frozenset(initial_state)] = "q0"  # Назначаем имя начального состояния ДКА
+    dfa_automaton = []  # Resulting DFA
+    state_map = {}  # Mapping of state sets to DFA state names
+    queue = []  # Queue for processing states in BFS order
+    Q_prime = set()  # DFA state space
+    delta_prime = []  # DFA transitions
+
+    # Compute the ε-closure of the initial state
+    initial_state = epsilon_closure(list(moore_automaton.keys())[0], moore_automaton)
+    state_map[frozenset(initial_state)] = "q0"
+    Q_prime.add(frozenset(initial_state))
     queue.append(frozenset(initial_state))
 
     while queue:
-        current_states = queue.pop(0)
-        current_state_name = state_map[current_states]
+        # Pop the current state set from the queue
+        curr_states = queue.pop(0)
+        curr_state_name = state_map[curr_states]
         dfa_state = {
-            "state": current_state_name,
-            "output": moore_automaton[next(iter(current_states))]['output'],  # Выход для состояния
+            "state": curr_state_name,
+            "output": moore_automaton[next(iter(curr_states))]['output'],
             "transitions": []
         }
 
+        # Compute transitions for each symbol in the alphabet
         for symbol in alphabet:
-            # Получаем множества состояний, в которые можно попасть по символу
-            next_states = move(current_states, symbol, moore_automaton)
-            if next_states:
-                # Находим ε-замыкание для нового множества состояний
-                next_closure = epsilon_closure(next_states, moore_automaton)
-                frozen_next_closure = frozenset(next_closure)
+            # Get move(Q, a) and ε-closure(move(Q, a))
+            next_states = move(curr_states, symbol, moore_automaton)
+            next_closure = epsilon_closure_of_set(next_states, moore_automaton)
 
-                if frozen_next_closure not in state_map:
-                    # Назначаем новое имя состоянию ДКА
+            if next_closure:
+                frozen_closure = frozenset(next_closure)
+                if frozen_closure not in state_map:
+                    # Add new state to the DFA
                     new_state_name = f"q{len(state_map)}"
-                    state_map[frozen_next_closure] = new_state_name
-                    queue.append(frozen_next_closure)
+                    state_map[frozen_closure] = new_state_name
+                    Q_prime.add(frozen_closure)
+                    queue.append(frozen_closure)
 
-                # Добавляем переход
+                # Add the transition to δ′
                 dfa_state['transitions'].append({
                     'inputSym': symbol,
-                    'nextPos': state_map[frozen_next_closure]
+                    'nextPos': state_map[frozen_closure]
                 })
-        print(dfa_state)
+
         dfa_automaton.append(dfa_state)
 
     return dfa_automaton
