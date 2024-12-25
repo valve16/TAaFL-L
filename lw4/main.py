@@ -92,7 +92,7 @@ def epsilon_closure(state, moore_automaton):
     while stack:
         current_state = stack.pop()
         for transition in moore_automaton[current_state]['transitions']:
-            if transition['inputSym'] == "ε":  # Check for ε-transitions
+            if transition['inputSym'] == "Оµ":  # Check for ε-transitions
                 for next_state in transition['nextPos']:
                     if next_state not in closure:
                         closure.add(next_state)
