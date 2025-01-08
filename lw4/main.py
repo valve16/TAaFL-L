@@ -117,6 +117,7 @@ def convert_nfa_to_dfa(moore_automaton, alphabet):
     dfa_automaton = []  # Resulting DFA
     state_map = {}  # {x1,x2: q1; x1: q0}
     queue = []
+    #has_output_F_set = set() # {x1, x2}
     Q_prime = set()  # set: {x1, x2, x1x2}
     alphabet = [symbol for symbol in alphabet if symbol != "ε"]
 
@@ -129,17 +130,25 @@ def convert_nfa_to_dfa(moore_automaton, alphabet):
     #print(initial_state_closure, "q0")
     while queue:
         curr_states_closure = queue.pop(0) # x1, x2, x3, a1
-        curr_state_name = state_map[curr_states_closure] # q1, q2, q3
+        curr_state_new_name = state_map[curr_states_closure] # q1, q2, q3
         #print(curr_state_name, curr_states_closure)
 
         # Create the DFA state representation
+        #curr_states_closure_sorted = sorted(curr_states_closure)
+        print(curr_states_closure)
+
+        has_output_F = any(moore_automaton[state]['output'] == 'F' for state in curr_states_closure)
+        if has_output_F:
+            for state in curr_states_closure:
+                moore_automaton[state]['output'] = 'F'
+
         representative_state = sorted(curr_states_closure)[0]
         dfa_state = {
-            "state": curr_state_name,
+            "state": curr_state_new_name,
             "output": moore_automaton[representative_state]['output'],
             "transitions": []
         }
-        #print(curr_states_closure, moore_automaton[representative_state]['output'])
+        #print(curr_states_closure_sorted, moore_automaton[representative_state]['output'])
 
         # Process each symbol in the alphabet
         for symbol in alphabet:
@@ -159,7 +168,7 @@ def convert_nfa_to_dfa(moore_automaton, alphabet):
                     'inputSym': symbol,
                     'nextPos': state_map[frozen_closure]
                 })
-                print(frozen_closure, state_map[frozen_closure])
+                #print(frozen_closure, state_map[frozen_closure])
 
         # Add the processed state to the DFA automaton
         dfa_automaton.append(dfa_state)
