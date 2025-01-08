@@ -143,8 +143,8 @@ def convert_nfa_to_dfa(moore_automaton, alphabet):
 
         # Process each symbol in the alphabet
         for symbol in alphabet:
-            new_states = move(curr_states_closure, symbol, moore_automaton)
-            new_states_closure = epsilon_closure(new_states, moore_automaton)
+            new_states_closure = move(curr_states_closure, symbol, moore_automaton)
+            #new_states_closure = epsilon_closure(new_states, moore_automaton)
 
             if new_states_closure:  # If resulting set is not empty
                 frozen_closure = frozenset(new_states_closure)
