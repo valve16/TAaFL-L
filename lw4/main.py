@@ -95,7 +95,7 @@ def epsilon_closure(states, moore_automaton, reachable_states=None):
         if state not in reachable_states:
             reachable_states.add(state)  # Mark state as visited
             for transition in moore_automaton[state]['transitions']:
-                if transition['inputSym'] == "Оµ":  # Check for epsilon transitions
+                if transition['inputSym'] == "ε":  # Check for epsilon transitions
                     next_states.update(transition['nextPos'])
 
     if not next_states:
@@ -115,22 +115,22 @@ def move(states, symbol, moore_automaton):
 
 def convert_nfa_to_dfa(moore_automaton, alphabet):
     dfa_automaton = []  # Resulting DFA
-    state_map = {}  # Mapping state sets to DFA state names
-    queue = []  # Queue for processing states in BFS order
-    Q_prime = set()  # DFA state space
+    state_map = {}  # {x1,x2: q1; x1: q0}
+    queue = []
+    Q_prime = set()  # set: {x1, x2, x1x2}
     alphabet = [symbol for symbol in alphabet if symbol != "ε"]
 
-    # Compute epsilon-closure of the initial state
     initial_state = epsilon_closure({list(moore_automaton.keys())[0]}, moore_automaton)
     initial_state_closure = frozenset(initial_state)
 
     state_map[initial_state_closure] = "q0"
     Q_prime.add(initial_state_closure)
     queue.append(initial_state_closure)
-
+    #print(initial_state_closure, "q0")
     while queue:
-        curr_states_closure = queue.pop(0)
-        curr_state_name = state_map[curr_states_closure]
+        curr_states_closure = queue.pop(0) # x1, x2, x3, a1
+        curr_state_name = state_map[curr_states_closure] # q1, q2, q3
+        #print(curr_state_name, curr_states_closure)
 
         # Create the DFA state representation
         representative_state = sorted(curr_states_closure)[0]
@@ -159,11 +159,12 @@ def convert_nfa_to_dfa(moore_automaton, alphabet):
                     'inputSym': symbol,
                     'nextPos': state_map[frozen_closure]
                 })
+                print(frozen_closure, state_map[frozen_closure])
 
         # Add the processed state to the DFA automaton
         dfa_automaton.append(dfa_state)
-
     return dfa_automaton
+
 
 def main():
 
