@@ -27,7 +27,7 @@ def read_moore_to_list(positions, file, alphabet):
 
         if input_sym != "Оµ":
             alphabet_set.add(input_sym)
-        print(input_sym, end=" ")
+        #print(input_sym, end=" ")
 
         for i in range(1, len(temp_row)):
             # Для каждого перехода собираем список состояний
@@ -85,79 +85,80 @@ def export_moore_automaton_to_csv(moore_automaton, filename):
 
     print(f"Moore automaton exported to {filename}")
 
-def epsilon_closure(state, moore_automaton):
-    closure = {state}
-    stack = [state]
 
-    while stack:
-        current_state = stack.pop()
-        for transition in moore_automaton[current_state]['transitions']:
-            if transition['inputSym'] == "Оµ":  # Check for ε-transitions
-                for next_state in transition['nextPos']:
-                    if next_state not in closure:
-                        closure.add(next_state)
-                        stack.append(next_state)  # Add newly found state
-    return closure
+def epsilon_closure(states, moore_automaton, reachable_states=None):
+    if reachable_states is None:
+        reachable_states = set()
 
-def epsilon_closure_of_set(states, moore_automaton):
-
-    reachable_states = set()
+    next_states = set()
     for state in states:
-        reachable_states.update(epsilon_closure(state, moore_automaton))
-    return reachable_states
+        if state not in reachable_states:
+            reachable_states.add(state)  # Mark state as visited
+            for transition in moore_automaton[state]['transitions']:
+                if transition['inputSym'] == "Оµ":  # Check for epsilon transitions
+                    next_states.update(transition['nextPos'])
+
+    if not next_states:
+        return reachable_states
+    else:
+        return epsilon_closure(next_states, moore_automaton, reachable_states)
 
 def move(states, symbol, moore_automaton):
-    next_states = set()
+    reachable_states = set()
+
     for state in states:
         for transition in moore_automaton[state]['transitions']:
             if transition['inputSym'] == symbol:
-                next_states.update(transition['nextPos'])
-    return next_states
+                reachable_states.update(transition['nextPos'])
+
+    return reachable_states
 
 def convert_nfa_to_dfa(moore_automaton, alphabet):
     dfa_automaton = []  # Resulting DFA
-    state_map = {}  # Mapping of state sets to DFA state names
+    state_map = {}  # Mapping state sets to DFA state names
     queue = []  # Queue for processing states in BFS order
     Q_prime = set()  # DFA state space
-    delta_prime = []  # DFA transitions
+    alphabet = [symbol for symbol in alphabet if symbol != "ε"]
 
-    # Compute the ε-closure of the initial state
-    initial_state = epsilon_closure(list(moore_automaton.keys())[0], moore_automaton)
-    state_map[frozenset(initial_state)] = "q0"
-    Q_prime.add(frozenset(initial_state))
-    queue.append(frozenset(initial_state))
+    # Compute epsilon-closure of the initial state
+    initial_state = epsilon_closure({list(moore_automaton.keys())[0]}, moore_automaton)
+    initial_state_closure = frozenset(initial_state)
+
+    state_map[initial_state_closure] = "q0"
+    Q_prime.add(initial_state_closure)
+    queue.append(initial_state_closure)
 
     while queue:
-        # Pop the current state set from the queue
-        curr_states = queue.pop(0)
-        curr_state_name = state_map[curr_states]
+        curr_states_closure = queue.pop(0)
+        curr_state_name = state_map[curr_states_closure]
+
+        # Create the DFA state representation
         dfa_state = {
             "state": curr_state_name,
-            "output": moore_automaton[next(iter(curr_states))]['output'],
+            "output": moore_automaton[next(iter(curr_states_closure))]['output'],
             "transitions": []
         }
 
-        # Compute transitions for each symbol in the alphabet
+        # Process each symbol in the alphabet
         for symbol in alphabet:
-            # Get move(Q, a) and ε-closure(move(Q, a))
-            next_states = move(curr_states, symbol, moore_automaton)
-            next_closure = epsilon_closure_of_set(next_states, moore_automaton)
+            new_states = move(curr_states_closure, symbol, moore_automaton)
+            new_states_closure = epsilon_closure(new_states, moore_automaton)
 
-            if next_closure:
-                frozen_closure = frozenset(next_closure)
+            if new_states_closure:  # If resulting set is not empty
+                frozen_closure = frozenset(new_states_closure)
                 if frozen_closure not in state_map:
-                    # Add new state to the DFA
                     new_state_name = f"q{len(state_map)}"
                     state_map[frozen_closure] = new_state_name
                     Q_prime.add(frozen_closure)
                     queue.append(frozen_closure)
 
-                # Add the transition to δ′
+                # Add the transition
                 dfa_state['transitions'].append({
                     'inputSym': symbol,
                     'nextPos': state_map[frozen_closure]
                 })
 
+        # Add the processed state to the DFA automaton
         dfa_automaton.append(dfa_state)
 
     return dfa_automaton
@@ -171,19 +172,15 @@ def main():
     grammar_file = sys.argv[1]
     output_file = sys.argv[2]
 
-    positions = []  # Список для состояний
-    alphabet = []   # Алфавит
+    # grammar_file = "source_nfa.csv"
     # output_file = "out.csv"
+    positions = []  # Список для состояний
+    alphabet = []   # Алфавит входных символов
 
-    with open(grammar_file, 'r') as file:
+
+    with open(grammar_file, 'r', encoding='utf-8') as file:
         positions, alphabet = read_moore_to_list(positions, file, alphabet)
-    # for state in positions:
-    #         print(f"Состояние: {state['state']}, Выход: {state['output']}")
-    #         for transition in state['transitions']:
-    #             print(f"  Переход по символу '{transition['inputSym']}': {', '.join(transition['nextPos'])}")
-    #
-    # print("States:", [state["state"] for state in positions])
-    # print("Alphabet:", alphabet)
+
     moore_automaton = {}
 
     for state in positions:
