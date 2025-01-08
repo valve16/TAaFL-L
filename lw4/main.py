@@ -133,11 +133,13 @@ def convert_nfa_to_dfa(moore_automaton, alphabet):
         curr_state_name = state_map[curr_states_closure]
 
         # Create the DFA state representation
+        representative_state = sorted(curr_states_closure)[0]
         dfa_state = {
             "state": curr_state_name,
-            "output": moore_automaton[next(iter(curr_states_closure))]['output'],
+            "output": moore_automaton[representative_state]['output'],
             "transitions": []
         }
+        #print(curr_states_closure, moore_automaton[representative_state]['output'])
 
         # Process each symbol in the alphabet
         for symbol in alphabet:
