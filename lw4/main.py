@@ -4,23 +4,20 @@ import csv
 import sys
 
 def read_moore_to_list(positions, file, alphabet):
-    alphabet_set = set()  # Множество для хранения символов алфавита
+    alphabet_set = set()  
     lines = file.readlines()
 
-    # Чтение первой строки
     temp_row = lines[0].strip().split(';')
     temp_row_st = lines[1].strip().split(';')
 
-    # Добавление состояний
     for i in range(1, len(temp_row)):
         state = {
             "state": temp_row_st[i],
             "output": temp_row[i],
-            "transitions": []  # Переходы для текущего состояния
+            "transitions": []  
         }
         positions.append(state)
 
-    # Чтение оставшихся строк
     for line in lines[2:]:
         temp_row = line.strip().split(';')
         input_sym = temp_row[0]
@@ -30,10 +27,9 @@ def read_moore_to_list(positions, file, alphabet):
         #print(input_sym, end=" ")
 
         for i in range(1, len(temp_row)):
-            # Для каждого перехода собираем список состояний
             transition = {
                 "inputSym": input_sym,
-                "nextPos": temp_row[i].split(',') if temp_row[i] else []  # Множество состояний для каждого символа
+                "nextPos": temp_row[i].split(',') if temp_row[i] else [] 
             }
             positions[i - 1]["transitions"].append(transition)
 
@@ -43,11 +39,10 @@ def read_moore_to_list(positions, file, alphabet):
     return positions, alphabet
 
 def export_moore_automaton_to_csv(moore_automaton, filename):
-    # Получаем все уникальные inputSym
     all_input_symbols = set()
     for state in moore_automaton:
         for transition in state['transitions']:
-            #if transition['nextPos']:  # используемые символы ввода
+            #if transition['nextPos']: 
             all_input_symbols.add(transition['inputSym'])
 
     all_input_symbols = sorted(all_input_symbols)
@@ -63,18 +58,16 @@ def export_moore_automaton_to_csv(moore_automaton, filename):
         headers = [''] + [state['state'] for state in moore_automaton]
         writer.writerow(headers)
 
-        #создаем строку в CSV
+
         for symbol in all_input_symbols:
             row = [symbol]
 
             for state in moore_automaton:
-                # Ищем переход для данного символа
                 next_states = []
                 for transition in state['transitions']:
                     if transition['inputSym'] == symbol:
                         next_states.append(transition['nextPos'])
-                    #  несколько переходов
-                #row.append(next_states)
+
                 if not next_states:
                     row.append('')
                 else:
@@ -95,7 +88,7 @@ def epsilon_closure(states, moore_automaton, reachable_states=None):
         if state not in reachable_states:
             reachable_states.add(state)  # Mark state as visited
             for transition in moore_automaton[state]['transitions']:
-                if transition['inputSym'] == "ε":  # Check for epsilon transitions
+                if transition['inputSym'] == "ε":  
                     next_states.update(transition['nextPos'])
 
     if not next_states:
@@ -103,75 +96,71 @@ def epsilon_closure(states, moore_automaton, reachable_states=None):
     else:
         return epsilon_closure(next_states, moore_automaton, reachable_states)
 
-def move(states, symbol, moore_automaton):
-    reachable_states = set()
-
-    for state in states:
-        for transition in moore_automaton[state]['transitions']:
-            if transition['inputSym'] == symbol:
-                reachable_states.update(transition['nextPos'])
-
-    return reachable_states
 
 def convert_nfa_to_dfa(moore_automaton, alphabet):
-    dfa_automaton = []  # Resulting DFA
-    state_map = {}  # {x1,x2: q1; x1: q0}
+    dfa_automaton = [] 
+    new_name_state_map = {} # {x0: S0; x1, x2: S2}
+    eps_state_map = {} # {x1: x1,x2}
     queue = []
-    #has_output_F_set = set() # {x1, x2}
-    Q_prime = set()  # set: {x1, x2, x1x2}
+
     alphabet = [symbol for symbol in alphabet if symbol != "ε"]
+    for state in moore_automaton:
+        eps_state_map[state] = frozenset(epsilon_closure({state}, moore_automaton))
 
-    initial_state = epsilon_closure({list(moore_automaton.keys())[0]}, moore_automaton)
-    initial_state_closure = frozenset(initial_state)
+    start_state = [list(moore_automaton.keys())[0]]
+    frozStartState = frozenset(start_state)
+    new_name_state_map[frozStartState] = "S0"
+    queue.append(start_state)
+    counter = 0
 
-    state_map[initial_state_closure] = "q0"
-    Q_prime.add(initial_state_closure)
-    queue.append(initial_state_closure)
-    #print(initial_state_closure, "q0")
     while queue:
-        curr_states_closure = queue.pop(0) # x1, x2, x3, a1
-        curr_state_new_name = state_map[curr_states_closure] # q1, q2, q3
-        #print(curr_state_name, curr_states_closure)
-
-        # Create the DFA state representation
-        #curr_states_closure_sorted = sorted(curr_states_closure)
-        print(curr_states_closure)
-
-        has_output_F = any(moore_automaton[state]['output'] == 'F' for state in curr_states_closure)
-        if has_output_F:
-            for state in curr_states_closure:
-                moore_automaton[state]['output'] = 'F'
-
-        representative_state = sorted(curr_states_closure)[0]
-        dfa_state = {
-            "state": curr_state_new_name,
-            "output": moore_automaton[representative_state]['output'],
+        print(queue)
+        currState = queue.pop(0)
+        currStateFrozen = frozenset(currState)
+        dfa_stateNew = {
+            "state": new_name_state_map[currStateFrozen],
+            "output": "",
             "transitions": []
         }
-        #print(curr_states_closure_sorted, moore_automaton[representative_state]['output'])
 
-        # Process each symbol in the alphabet
-        for symbol in alphabet:
-            new_states_closure = move(curr_states_closure, symbol, moore_automaton)
-            #new_states_closure = epsilon_closure(new_states, moore_automaton)
+        curr_state = frozenset().union(*(eps_state_map[state] for state in currState))
+        #print("State: ", currState)
 
-            if new_states_closure:  # If resulting set is not empty
-                frozen_closure = frozenset(new_states_closure)
-                if frozen_closure not in state_map:
-                    new_state_name = f"q{len(state_map)}"
-                    state_map[frozen_closure] = new_state_name
-                    Q_prime.add(frozen_closure)
-                    queue.append(frozen_closure)
+        for state in curr_state:
+            if moore_automaton[state]['output'] == "F":
+                dfa_stateNew['output'] = "F"
 
-                # Add the transition
-                dfa_state['transitions'].append({
-                    'inputSym': symbol,
-                    'nextPos': state_map[frozen_closure]
-                })
-                #print(frozen_closure, state_map[frozen_closure])
+            for symbol in alphabet:
+                for transition in moore_automaton[state]['transitions']:
+                    if transition['inputSym'] == symbol:
+                        if transition['nextPos']:
+                            next_positions = list(transition['nextPos'])
+                            existing_transition = next(
+                                (t for t in dfa_stateNew['transitions'] if t['inputSym'] == symbol), None
+                            )
 
-        # Add the processed state to the DFA automaton
-        dfa_automaton.append(dfa_state)
+                            if existing_transition:
+                                existing_transition['nextPos'].extend(
+                                    pos for pos in next_positions if pos not in existing_transition['nextPos']
+                                )
+                            else:
+                                dfa_stateNew['transitions'].append({
+                                    'inputSym': symbol,
+                                    'nextPos': next_positions
+                                })
+
+        for transition in dfa_stateNew['transitions']:
+            frozSet = frozenset(transition['nextPos'])
+
+            if frozSet:
+                if frozSet not in new_name_state_map.keys():
+                    counter += 1
+                    new_name_state_map[frozSet] = f"S{counter}"
+                    queue.append(transition['nextPos'])
+                    #print(frozSet)
+                transition['nextPos'] = new_name_state_map[frozSet]
+
+        dfa_automaton.append(dfa_stateNew)
     return dfa_automaton
 
 
