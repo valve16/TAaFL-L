@@ -1,15 +1,25 @@
-﻿// minim.cpp: определяет точку входа для приложения.
-//
-
-#include "minim.h"
-
-
+﻿#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <iostream>
+#include <map>
+#include <set>
+#include <unordered_set>
+#include <algorithm>
+#include <queue>
 
 std::vector<std::string> split(const std::string& s, char delimiter) {
     std::vector<std::string> tokens;
     std::string token;
     std::istringstream tokenStream(s);
     while (std::getline(tokenStream, token, delimiter)) {
+        if (token.empty())
+        {
+            token = "-";
+        }
         tokens.push_back(token);
     }
     return tokens;
@@ -77,6 +87,7 @@ std::vector<MealyState> findReachableStates(const std::vector<MealyState>& mealy
                             if (nextState.curr == transition.nextPos)
                             {
                                 reachableStates.push_back(nextState);
+                                //std::cout << nextState.curr << "\n";
                                 break;
                             }
                         }
@@ -89,6 +100,7 @@ std::vector<MealyState> findReachableStates(const std::vector<MealyState>& mealy
 
     return reachableStates;
 }
+
 
 std::vector<MooreState> findMooreReachableStates(const std::vector<MooreState>& mooreStates)
 {
@@ -136,7 +148,6 @@ std::vector<MooreState> findMooreReachableStates(const std::vector<MooreState>& 
     return reachableStates;
 }
 
-
 std::vector<MealyState> mealyMin(const std::vector<MealyState>& mealyAutomaton)
 {
     std::map<std::string, std::string> newStateMap; //q0 -> A0;
@@ -145,31 +156,39 @@ std::vector<MealyState> mealyMin(const std::vector<MealyState>& mealyAutomaton)
     std::vector<MealyState> newMealyAutomaton;
     std::map <std::string, std::vector<std::string>> StateInGroup; // A1,{q1,q2,q3}
 
-    char ch = 'A';
+   char ch = 'A';
     int stateCounter = 0;
 
     // Первый проход: группировка состояний по выходным переходам
-    for (const auto& state : mealyAutomaton)
+    for (const auto& state : mealyAutomaton) 
     {
         std::vector<std::string> outVector;
-        for (const auto& transition : state.transitions)
+        for (const auto& transition : state.transitions) 
         {
             outVector.push_back(transition.outSym);
         }
 
-        if (vecOutSet.insert(outVector).second)
+        if (vecOutSet.insert(outVector).second)  
         {
             std::string newMinStateName = ch + std::to_string(stateCounter);
             vecOutNewStMap[outVector] = newMinStateName;  // mapOutGr
-            newStateMap[state.curr] = newMinStateName;
+            newStateMap[state.curr] = newMinStateName; 
             stateCounter++;
         }
         else
         {
-            newStateMap[state.curr] = vecOutNewStMap[outVector];
+            newStateMap[state.curr] = vecOutNewStMap[outVector];  
         }
 
     }
+
+    //for (const auto& pair : newStateMap) 
+    //{
+    //    const std::string& state = pair.first;  // q0
+    //    const std::string& group = pair.second; // A0
+
+    //    StateInGroup[group].push_back(state); // {A1, { q1,q2,q3 }}
+    //}
 
     std::map <std::string, std::vector<MealyState>> NewMealyInGroup; // A1, {q1, {z1, A0, y1}, {z1, A0, y1}}
 
@@ -183,20 +202,21 @@ std::vector<MealyState> mealyMin(const std::vector<MealyState>& mealyAutomaton)
             Trans newTrans;
             newTrans.inputSym = transition.inputSym;
             newTrans.nextPos = newStateMap[transition.nextPos];
-
+           
             newTrans.outSym = transition.outSym;
             tempVec.push_back(newTrans);
         }
         tempState.curr = state.curr; //q0
         tempState.transitions = tempVec;
         NewMealyInGroup[newStateMap[tempState.curr]].push_back(tempState);
+        //std::cout << newStateMap[tempState.curr] << " " << tempState.curr << "\n";
 
     }
 
     auto prevSize = vecOutSet.size();
     size_t currSize = 0;
     bool equal = 0;
-    while (prevSize != currSize)
+    while (prevSize != currSize) 
     {
         ch++;
         int i = 0;
@@ -207,8 +227,10 @@ std::vector<MealyState> mealyMin(const std::vector<MealyState>& mealyAutomaton)
         {
             std::map<std::vector<std::string>, std::string> vecNextNewStMap; // vecNext -> A0; mapOutGr
             std::set<std::vector<std::string>> vecTransSet;
+            //std::cout << group.first << "\n";
             for (const auto& state : group.second)
             {
+                //std::cout << group.first;
                 std::vector<std::string> transVector;
                 for (const auto& transition : state.transitions)
                 {
@@ -226,6 +248,7 @@ std::vector<MealyState> mealyMin(const std::vector<MealyState>& mealyAutomaton)
                 {
                     tempNewStateMap[state.curr] = vecNextNewStMap[transVector];
                 }
+                //std::cout << state.curr << " " << tempNewStateMap[state.curr] << "\n";
                 currSize += vecTransSet.size();
             }
         }
@@ -263,6 +286,26 @@ std::vector<MealyState> mealyMin(const std::vector<MealyState>& mealyAutomaton)
 
     }
 
+
+    //for (const auto& state : mealyAutomaton)
+    //{
+    //    MealyState tempState;
+    //    std::vector<Trans> tempVec;
+    //    for (const auto& transition : state.transitions)
+    //    {
+    //        Trans newTrans;
+    //        newTrans.inputSym = transition.inputSym;
+    //        newTrans.nextPos = newStateMap[transition.nextPos];
+    //        newTrans.outSym = transition.outSym;
+    //        tempVec.push_back(newTrans);
+    //    }
+    //    tempState.curr = state.curr; //q0
+    //    std::cout << state.curr;
+    //    tempState.transitions = tempVec;
+    //    NewMealyInGroup[newStateMap[tempState.curr]].push_back(tempState);
+    //    //tempMealy.push_back(tempState);
+    //}
+
     std::vector<MealyState> tempMealy;
 
     for (const auto& group : NewMealyInGroup)
@@ -275,6 +318,7 @@ std::vector<MealyState> mealyMin(const std::vector<MealyState>& mealyAutomaton)
             Trans newTrans;
             newTrans.inputSym = trans.inputSym;
             newTrans.nextPos = trans.nextPos;
+            //std::cout << trans.nextPos <<  " "  << newTrans.nextPos << "\n";
             newTrans.outSym = trans.outSym;
             tempVec.push_back(newTrans);
         }
@@ -286,7 +330,7 @@ std::vector<MealyState> mealyMin(const std::vector<MealyState>& mealyAutomaton)
     }
 
     return tempMealy;
-
+   
 
 }
 
@@ -295,7 +339,6 @@ std::vector<MooreState> mooreMin(const std::vector<MooreState>& mooreAutomaton)
     std::map<std::string, std::string> newStateMap; //q0 -> A0;
     std::set<std::string> outSet;
     std::map<std::string, std::string> outNewStMap; // y1 -> A0; mapOutGr
-    std::vector<MealyState> newMealyAutomaton;
     std::map <std::string, std::vector<std::string>> StateInGroup; // A1,{q1,q2,q3}
 
     char ch = 'A';
@@ -305,17 +348,26 @@ std::vector<MooreState> mooreMin(const std::vector<MooreState>& mooreAutomaton)
     for (const auto& state : mooreAutomaton)
     {
         std::vector<std::string> outVector;
+        //for (const auto& transition : state.transitions)
+        //{
+        //}
+
+        //outVector.push_back(state.output);
 
         if (outSet.insert(state.output).second)
         {
             std::string newMinStateName = ch + std::to_string(stateCounter);
             outNewStMap[state.output] = newMinStateName;  // mapOutGr
             newStateMap[state.state] = newMinStateName;
+            //std::cout << state.state << " " << newMinStateName << "\n";
             stateCounter++;
         }
         else
         {
+
             newStateMap[state.state] = outNewStMap[state.output];
+            //std::cout << state.state << " " << newMinStateName << "\n";
+
         }
     }
 
@@ -339,6 +391,7 @@ std::vector<MooreState> mooreMin(const std::vector<MooreState>& mooreAutomaton)
         tempState.state = state.state; //q0
         tempState.transitions = tempVec;
         NewMooreInGroup[newStateMap[tempState.state]].push_back(tempState);
+        //std::cout << newStateMap[tempState.curr] << " " << tempState.curr << "";
 
     }
 
@@ -389,6 +442,7 @@ std::vector<MooreState> mooreMin(const std::vector<MooreState>& mooreAutomaton)
                 TransMoore newTrans;
                 newTrans.inputSym = transition.inputSym;
                 newTrans.nextPos = tempNewStateMap[transition.nextPos];
+                //newTrans.outSym = transition.outSym;
                 tempVec.push_back(newTrans);
             }
             tempState.state = state.state; //q0
@@ -409,7 +463,6 @@ std::vector<MooreState> mooreMin(const std::vector<MooreState>& mooreAutomaton)
             prevSize = currSize;
             currSize = 0;
         }
-
     }
 
     std::vector<MooreState> tempMealy;
@@ -424,6 +477,8 @@ std::vector<MooreState> mooreMin(const std::vector<MooreState>& mooreAutomaton)
             TransMoore newTrans;
             newTrans.inputSym = trans.inputSym;
             newTrans.nextPos = trans.nextPos;
+            //std::cout << trans.nextPos <<  " "  << newTrans.nextPos << "\n";
+            //newTrans.outSym = trans.outSym;
             tempVec.push_back(newTrans);
         }
         tempState.state = group.first; //A, B, C
@@ -482,29 +537,44 @@ std::vector<MooreState> ReadMooreToVec(std::vector<MooreState>& positions, std::
     std::vector<std::string> tempRowSt = split(lineSt, ';');
 
 
-    for (size_t i = 1; i < tempRow.size(); ++i) // Пропускаем первый элемент (пустой)
+    for (size_t i = 1; i < tempRowSt.size(); ++i) // Пропускаем первый элемент 
     {
         MooreState state;
-        state.output = tempRow[i];
+        if (i >= tempRow.size())
+        {
+            state.output = "-";
+        }
+        else
+        {
+            state.output = tempRow[i];
+        }
+        //state.output = tempRow[i];
         state.state = tempRowSt[i]; // Текущая позиция - имя состояния
         positions.push_back(state);
     }
 
-    std::vector<std::string> tRow;
+    std::string tRow;
     while (std::getline(file, line))
     {
         tempRow = split(line, ';');
+
         std::string input_sym = tempRow[0];
         for (int i = 0; i < positions.size(); i++)
         {
-
             TransMoore trans;
-            tRow = split(tempRow[i + 1], '/');
             trans.inputSym = input_sym;
-            trans.nextPos = tRow[0];
-            //std::cout << tRow[0] << " " << tRow[1] << "\n";
+            if ((i + 1) >= tempRow.size())
+            {
+                trans.nextPos = "-";
+            }
+            else 
+            {
+                trans.nextPos = tempRow[i + 1];
+            }
+            std::cout << trans.nextPos << " ";
             positions[i].transitions.push_back(trans);
         }
+        std::cout << " \n";
     };
     file.close();
 
@@ -522,7 +592,7 @@ void WriteMealyToFile(std::vector<MealyState>& mealyAutomaton, std::ofstream& ou
 
         for (size_t i = 0; i < mealyAutomaton[0].transitions.size(); ++i) {
             const auto& inputSym = mealyAutomaton[0].transitions[i].inputSym;
-            outFile << inputSym;
+            outFile << inputSym; 
 
             for (const auto& state : mealyAutomaton) {
                 const auto& trans = state.transitions[i];
@@ -558,6 +628,17 @@ void WriteMooreToFile(std::vector<MooreState>& mooreAutomaton, std::ofstream& ou
         }
         outFile << "\n";
 
+        //for (const auto& trans : mooreAutomaton[0].transitions)
+        //{
+        //    outFile << trans.inputSym << ";"; // Символ входа (inputSym)
+        //    for (const auto& state : mooreAutomaton)
+        //    {
+        //        // Записываем соответствующие переходы для каждого состояния
+        //        outFile << state.transitions.at(trans.inputSym) << ";";
+
+        //    }
+        //    outFile << "\n";
+        //}
         for (size_t i = 0; i < mooreAutomaton[0].transitions.size(); ++i) {
             const auto& inputSym = mooreAutomaton[0].transitions[i].inputSym;
             outFile << inputSym;
@@ -579,23 +660,17 @@ void WriteMooreToFile(std::vector<MooreState>& mooreAutomaton, std::ofstream& ou
 
 }
 
-
 int main(int argc, char* argv[])
 {
-    //SetConsoleOutputCP(1251);
-
     std::string nameOperation;
 
-    nameOperation = argv[1];
-    std::string inputFileName = argv[2];
-    std::string outputFileName = argv[3];
+    //nameOperation = "mealy-to-moore";
+    //std::string inputFileName = "mealy_src.csv";
+    //std::string outputFileName = "src.csv";
 
-
-
-
- /*   nameOperation = "moore";
-    std::string inputFileName = "5_moore.csv";
-    std::string outputFileName = "moore_opt.csv";*/
+    nameOperation = "moore";
+    std::string inputFileName = "out3.csv";
+    std::string outputFileName = "dfa.csv";
 
 
     std::ifstream file(inputFileName);
@@ -613,7 +688,7 @@ int main(int argc, char* argv[])
         std::vector<MealyState> mealyStates;
         mealyStates = ReadMealyToVec(mealyStates, file);
 
-        std::vector<MealyState> reachableStates = findReachableStates(mealyStates);
+        //std::vector<MealyState> reachableStates = findReachableStates(mealyStates);
 
         std::vector<MealyState> minimize = mealyMin(mealyStates);
 
